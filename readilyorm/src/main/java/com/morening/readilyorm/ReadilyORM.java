@@ -9,7 +9,9 @@ import com.morening.readilyorm.core.DatabaseOperationHelper;
 import com.morening.readilyorm.core.DefaultOperator;
 import com.morening.readilyorm.core.DependencyCache;
 import com.morening.readilyorm.core.DependencyResolver;
+import com.morening.readilyorm.core.DependencyValidator;
 import com.morening.readilyorm.exception.DatabaseOperationException;
+import com.morening.readilyorm.exception.IllegalParameterException;
 
 import java.util.List;
 
@@ -26,14 +28,11 @@ final public class ReadilyORM {
 
     private DatabaseOperationHelper operationHelper;
 
-    private ReadilyORM(Context context, String name, int version, Class<?> type, Operator operator, DatabaseVersionChangedListener listener){
+    private ReadilyORM(Context context, String name, int version, Class<?> type, Operator operator, DatabaseVersionChangedListener listener) {
         DependencyCache cache = new DependencyCache();
         DependencyResolver resolver = new DependencyResolver(cache);
-        try {
-            resolver.resolve(type);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        resolver.resolve(type);
+        DependencyValidator.validate(cache);
         DatabaseGenerator generator = new DatabaseGenerator(cache, listener);
         DatabaseOpenHelper openHelper = new DatabaseOpenHelper.Builder(context)
                 .name(name).version(version).generator(generator).build();
@@ -57,7 +56,7 @@ final public class ReadilyORM {
      */
     public <T> List<T> insert(@NonNull T... ts) throws DatabaseOperationException {
         if (ts == null || ts.length == 0){
-            throw new DatabaseOperationException("Inserting beans should not be null!");
+            throw new IllegalParameterException("Inserting beans should not be null!");
         }
         return operationHelper.insertInTx(ts);
     }
@@ -73,9 +72,9 @@ final public class ReadilyORM {
      * @return A list of inserted objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> insert(@NonNull List<T> ts) throws DatabaseOperationException{
+    public <T> List<T> insert(@NonNull List<T> ts) throws DatabaseOperationException {
         if (ts == null || ts.size() == 0){
-            throw new DatabaseOperationException("Inserting beans should not be null!");
+            throw new IllegalParameterException("Inserting beans should not be null!");
         }
         return operationHelper.insertInTx(ts);
     }
@@ -89,9 +88,9 @@ final public class ReadilyORM {
      * @return A list of retrieved objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> retrieve(@NonNull T... ts) throws DatabaseOperationException{
+    public <T> List<T> retrieve(@NonNull T... ts) throws DatabaseOperationException {
         if (ts == null || ts.length == 0){
-            throw new DatabaseOperationException("Retrieving beans should not be null!");
+            throw new IllegalParameterException("Retrieving beans should not be null!");
         }
         return operationHelper.retrieveInTx(ts);
     }
@@ -105,9 +104,9 @@ final public class ReadilyORM {
      * @return A list of retrieved objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> retrieve(@NonNull List<T> ts) throws DatabaseOperationException{
+    public <T> List<T> retrieve(@NonNull List<T> ts) throws DatabaseOperationException {
         if (ts == null || ts.size() == 0){
-            throw new DatabaseOperationException("Retrieving beans should not be null!");
+            throw new IllegalParameterException("Retrieving beans should not be null!");
         }
         return operationHelper.retrieveInTx(ts);
     }
@@ -122,9 +121,9 @@ final public class ReadilyORM {
      * @return A list of updated objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> update(@NonNull T... ts) throws DatabaseOperationException{
+    public <T> List<T> update(@NonNull T... ts) throws DatabaseOperationException {
         if (ts == null || ts.length == 0){
-            throw new DatabaseOperationException("Updating beans should not be null!");
+            throw new IllegalParameterException("Updating beans should not be null!");
         }
         return operationHelper.updateInTx(ts);
     }
@@ -139,9 +138,9 @@ final public class ReadilyORM {
      * @return A list of updated objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> update(@NonNull List<T> ts) throws DatabaseOperationException{
+    public <T> List<T> update(@NonNull List<T> ts) throws DatabaseOperationException {
         if (ts == null || ts.size() == 0){
-            throw new DatabaseOperationException("Updating beans should not be null!");
+            throw new IllegalParameterException("Updating beans should not be null!");
         }
         return operationHelper.updateInTx(ts);
     }
@@ -157,9 +156,9 @@ final public class ReadilyORM {
      * @return A list of deleted objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> delete(@NonNull T... ts) throws DatabaseOperationException{
+    public <T> List<T> delete(@NonNull T... ts) throws DatabaseOperationException {
         if (ts == null || ts.length == 0){
-            throw new DatabaseOperationException("Deleting beans should not be null!");
+            throw new IllegalParameterException("Deleting beans should not be null!");
         }
         return operationHelper.deleteInTx(ts);
     }
@@ -175,9 +174,9 @@ final public class ReadilyORM {
      * @return A list of deleted objects
      * @throws DatabaseOperationException
      */
-    public <T> List<T> delete(@NonNull List<T> ts) throws DatabaseOperationException{
+    public <T> List<T> delete(@NonNull List<T> ts) throws DatabaseOperationException {
         if (ts == null || ts.size() == 0){
-            throw new DatabaseOperationException("Deleting beans should not be null!");
+            throw new IllegalParameterException("Deleting beans should not be null!");
         }
         return operationHelper.deleteInTx(ts);
     }
@@ -266,7 +265,7 @@ final public class ReadilyORM {
          *
          * @return ReadilyORM
          */
-        public ReadilyORM build(){
+        public ReadilyORM build() {
 
             return new ReadilyORM(context, name, version, type, operator, listener);
         }

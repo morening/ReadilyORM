@@ -23,7 +23,7 @@ public class TestResolveDependency {
     private DependencyCache cache = null;
 
     @Before
-    public void setUp() throws ClassNotFoundException {
+    public void setUp() {
         cache = new DependencyCache();
         DependencyResolver resolver = new DependencyResolver(cache);
         resolver.resolve(CustomerBean.class);

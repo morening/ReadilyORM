@@ -7,6 +7,7 @@ import android.text.TextUtils;
 import com.morening.readilyorm.annotations.NotNull;
 import com.morening.readilyorm.annotations.ToMany;
 import com.morening.readilyorm.annotations.ToOne;
+import com.morening.readilyorm.exception.IllegalParameterException;
 import com.morening.readilyorm.util.Logger;
 import com.morening.readilyorm.util.PrimitiveTypes;
 
@@ -26,7 +27,7 @@ final public class DependencyResolver {
     }
 
     @TargetApi(Build.VERSION_CODES.P)
-    public void resolve(Class<?> type) throws ClassNotFoundException {
+    public void resolve(Class<?> type) {
         Logger.d(this, String.format("[%s] start resolve", type.getSimpleName()));
 
         Field[] fields = type.getDeclaredFields();
@@ -35,7 +36,7 @@ final public class DependencyResolver {
             String fieldName = field.getName();
             Class<?> fieldType = field.getType();
             if (PrimitiveTypes.isUnsupportPrimitiveType(fieldType)){
-                throw new IllegalArgumentException(fieldType.getSimpleName()+" is not supported, please change to its box class!");
+                throw new IllegalParameterException(fieldType.getSimpleName()+" is not supported, please change to its boxing class!");
             }
             String typeInDb = PrimitiveTypes.getColumnType(fieldType);
 
@@ -64,13 +65,17 @@ final public class DependencyResolver {
                     if (fieldType == List.class){
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
                             String typeName = ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0].getTypeName();
-                            genericType = Class.forName(typeName);
+                            try {
+                                genericType = Class.forName(typeName);
+                            } catch (ClassNotFoundException e) {
+                                throw new IllegalParameterException(e.getMessage());
+                            }
                         } else {
                             genericType = toMany.type();
                         }
                     } else {
                         /*genericType = genericType.getComponentType();*/
-                        throw new IllegalArgumentException("ToMany annotation only support List");
+                        throw new IllegalParameterException("ToMany annotation only support List");
                     }
                     Logger.d(this, String.format("[%s] <ToMany> rk=%s, genericType=%s",
                             type.getSimpleName(), rk, genericType.getSimpleName()));

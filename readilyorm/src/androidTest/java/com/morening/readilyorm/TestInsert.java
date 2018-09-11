@@ -1,16 +1,14 @@
 package com.morening.readilyorm;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
-import android.util.Log;
 
-import com.morening.readilyorm.ReadilyORM;
 import com.morening.readilyorm.bean.CustomerBean;
 import com.morening.readilyorm.bean.LocationBean;
 import com.morening.readilyorm.bean.OrderBean;
 import com.morening.readilyorm.bean.TestingData;
 import com.morening.readilyorm.exception.DatabaseOperationException;
+import com.morening.readilyorm.exception.IllegalParameterException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -32,7 +30,7 @@ public class TestInsert {
     private CustomerBean customerBean = null;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         readilyORM = new ReadilyORM.Builder(InstrumentationRegistry.getTargetContext())
                 .name("test").version(1).type(CustomerBean.class).build();
         customerBean = TestingData.getCustomerBean();
@@ -142,7 +140,7 @@ public class TestInsert {
         Assert.assertNull(customerBeans.get(0).getOrders());
     }
 
-    @Test(expected = DatabaseOperationException.class)
+    @Test(expected = IllegalParameterException.class)
     public void insert_throws_DatabaseOperationException_for_null_args() throws DatabaseOperationException {
         readilyORM.insert();
     }

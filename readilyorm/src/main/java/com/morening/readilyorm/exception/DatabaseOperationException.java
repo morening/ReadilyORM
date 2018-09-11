@@ -5,10 +5,6 @@ package com.morening.readilyorm.exception;
  */
 public class DatabaseOperationException extends Exception {
 
-    public DatabaseOperationException(String cause){
-        super(cause);
-    }
-
     public DatabaseOperationException(Exception e){
         super(e.getMessage(), e.getCause());
         setStackTrace(e.getStackTrace());

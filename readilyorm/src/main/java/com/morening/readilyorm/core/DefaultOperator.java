@@ -9,6 +9,7 @@ import android.text.TextUtils;
 
 import com.morening.readilyorm.Operator;
 import com.morening.readilyorm.exception.DatabaseOperationException;
+import com.morening.readilyorm.exception.IllegalParameterException;
 import com.morening.readilyorm.util.Logger;
 
 import java.lang.reflect.InvocationTargetException;
@@ -111,7 +112,7 @@ final public class DefaultOperator implements Operator {
 
             Object Get_Value = Get_FieldValue(target, nameInDb);
             if (Get_Value == null && column.notNull){
-                throw new IllegalArgumentException("\""+nameInDb+"\""+" shouldn't be null, Because of NotNull Constraint!");
+                throw new IllegalParameterException("\""+nameInDb+"\""+" shouldn't be null, Because of NotNull Constraint!");
             }
             if (fieldType == Integer.class){
                 Integer value = 0;

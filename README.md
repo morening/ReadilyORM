@@ -42,6 +42,10 @@
  @ToOne(fk = "fk_location_id")
  private LocationBean location;
  ```
+  ```java
+  // In OrderBean, it will keep locationbean's id
+  private Integer fk_location_id;
+  ```
  4. Please don't modify any column name in database or upgrade database's version and implement DatabaseVersionChangedListener.
  5. By default, primary key is Integer type and auto increment.
  6. ReadilyORM don't support unboxing type, for example int/long/float and so on.

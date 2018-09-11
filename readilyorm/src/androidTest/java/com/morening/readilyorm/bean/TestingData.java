@@ -1,9 +1,5 @@
 package com.morening.readilyorm.bean;
 
-import com.morening.readilyorm.bean.CustomerBean;
-import com.morening.readilyorm.bean.LocationBean;
-import com.morening.readilyorm.bean.OrderBean;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;

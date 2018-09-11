@@ -1,14 +1,13 @@
 package com.morening.readilyorm;
 
 import android.support.test.InstrumentationRegistry;
-import android.util.Log;
 
-import com.morening.readilyorm.ReadilyORM;
 import com.morening.readilyorm.bean.CustomerBean;
 import com.morening.readilyorm.bean.LocationBean;
 import com.morening.readilyorm.bean.OrderBean;
 import com.morening.readilyorm.bean.TestingData;
 import com.morening.readilyorm.exception.DatabaseOperationException;
+import com.morening.readilyorm.exception.IllegalParameterException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -134,7 +133,6 @@ public class TestRetrieve {
     public void retrieve_with_orderbean_id() throws DatabaseOperationException {
         OrderBean orderBean = customerBean.getOrders().get(0);
         OrderBean order = new OrderBean();
-        Log.d("sunning", "id="+orderBean.getId());
         order.setId(orderBean.getId());
         List<OrderBean> orderBeanList = readilyORM.retrieve(order);
         Assert.assertNotNull(orderBeanList);
@@ -276,7 +274,7 @@ public class TestRetrieve {
         Assert.assertNotNull(locationBeanList.get(0));
     }
 
-    @Test(expected = DatabaseOperationException.class)
+    @Test(expected = IllegalParameterException.class)
     public void retrieve_throws_DatabaseOperationException_for_null_args() throws DatabaseOperationException {
         readilyORM.retrieve();
     }

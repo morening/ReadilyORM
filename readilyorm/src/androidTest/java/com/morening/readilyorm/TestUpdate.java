@@ -2,14 +2,13 @@ package com.morening.readilyorm;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
-import android.util.Log;
 
-import com.morening.readilyorm.ReadilyORM;
 import com.morening.readilyorm.bean.CustomerBean;
 import com.morening.readilyorm.bean.LocationBean;
 import com.morening.readilyorm.bean.OrderBean;
 import com.morening.readilyorm.bean.TestingData;
 import com.morening.readilyorm.exception.DatabaseOperationException;
+import com.morening.readilyorm.exception.IllegalParameterException;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -139,7 +138,6 @@ public class TestUpdate {
     @Test
     public void update_with_orderbean_bean_field() throws DatabaseOperationException {
         OrderBean orderBean = customerBean.getOrders().get(0);
-        Log.d("sunning", "id="+orderBean.getId());
         TESTING_DATA_LOCATIONBEAN.setId(orderBean.getId());
         orderBean.setLocation(TESTING_DATA_LOCATIONBEAN);
         List<OrderBean> orderBeanList = readilyORM.update(orderBean);
@@ -192,7 +190,7 @@ public class TestUpdate {
         Assert.assertEquals(TESTING_DATA_STRING, locationBeanList.get(0).getBlock());
     }
 
-    @Test(expected = DatabaseOperationException.class)
+    @Test(expected = IllegalParameterException.class)
     public void update_throws_DatabaseOperationException_for_null_args() throws DatabaseOperationException {
         readilyORM.update();
     }
