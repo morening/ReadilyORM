@@ -2,6 +2,7 @@ package com.morening.readilyorm;
 
 import android.database.sqlite.SQLiteDatabase;
 
+import com.morening.readilyorm.core.DependencyCache;
 import com.morening.readilyorm.exception.DatabaseOperationException;
 
 import java.util.List;
@@ -13,7 +14,13 @@ import java.util.List;
 /**
  * Implement this interface to convert between java object and SQL model
  */
-public interface Operator {
+public abstract class Operator {
+
+    protected DependencyCache cache;
+
+    public void setDependencyCache(DependencyCache cache){
+        this.cache = cache;
+    }
 
     /**
      * Insert java object with SQLiteDatabase
@@ -24,7 +31,7 @@ public interface Operator {
      * @return the inserted object
      * @throws DatabaseOperationException
      */
-    <T> T onInsert(T target, SQLiteDatabase db) throws DatabaseOperationException;
+    public abstract <T> T onInsert(T target, SQLiteDatabase db) throws DatabaseOperationException;
 
     /**
      * Retrieve java object with SQLiteDatabase
@@ -35,7 +42,7 @@ public interface Operator {
      * @return the retrieved object
      * @throws DatabaseOperationException
      */
-    <T> List<T> onRetrieve(T target, SQLiteDatabase db) throws DatabaseOperationException;
+    public abstract <T> List<T> onRetrieve(T target, SQLiteDatabase db) throws DatabaseOperationException;
 
     /**
      * Update java object with SQLiteDatabase
@@ -46,7 +53,7 @@ public interface Operator {
      * @return the updated object
      * @throws DatabaseOperationException
      */
-    <T> T onUpdate(T target, SQLiteDatabase db) throws DatabaseOperationException;
+    public abstract <T> T onUpdate(T target, SQLiteDatabase db) throws DatabaseOperationException;
 
     /**
      * Delete java object with SQLiteDatabase
@@ -57,5 +64,5 @@ public interface Operator {
      * @return the deleted object
      * @throws DatabaseOperationException
      */
-    <T> List<T> onDelete(T target, SQLiteDatabase db) throws DatabaseOperationException;
+    public abstract <T> List<T> onDelete(T target, SQLiteDatabase db) throws DatabaseOperationException;
 }

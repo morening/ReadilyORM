@@ -38,8 +38,9 @@ final public class ReadilyORM {
                 .name(name).version(version).generator(generator).build();
         Operator opt = operator;
         if (operator == null){
-            opt = new DefaultOperator(cache);
+            opt = new DefaultOperator();
         }
+        opt.setDependencyCache(cache);
         operationHelper = new DatabaseOperationHelper(openHelper, opt);
     }
 

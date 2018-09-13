@@ -1,29 +1,29 @@
 package com.morening.readilyorm.core;
 
+import android.animation.StateListAnimator;
 import android.annotation.TargetApi;
-import android.content.ContentValues;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.Build;
 import android.text.TextUtils;
 
-import com.morening.readilyorm.Operator;
 import com.morening.readilyorm.exception.DatabaseOperationException;
 import com.morening.readilyorm.exception.IllegalParameterException;
 import com.morening.readilyorm.util.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by morening on 2018/9/2.
+ * Created by morening on 2018/9/12.
  */
-public class DefaultOperator extends Operator {
 
+public class StatementOperator extends DefaultOperator {
+
+    @Override
     public <T> T onInsert(T target, SQLiteDatabase db) throws DatabaseOperationException {
         try {
             insert(target, db, null);
@@ -41,12 +41,6 @@ public class DefaultOperator extends Operator {
     private <T> long insert(T target, SQLiteDatabase db, Map<String, Long> nextMap) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Class<?> targetClass = target.getClass();
 
-        ContentValues cv = new ContentValues();
-        if (nextMap != null){
-            for (String key: nextMap.keySet()){
-                cv.put(key, nextMap.get(key));
-            }
-        }
         Dependency dependency = cache.getDependency(targetClass);
         if (dependency.preConditions != null){
             for (Dependency.Condition condition: dependency.preConditions){
@@ -61,13 +55,16 @@ public class DefaultOperator extends Operator {
                 long inserted_id = insert(nextTarget, db, null);
                 Logger.d(this, String.format("[%s] <insert> preCondition nameInDb=%s, inserted_id=%s",
                         targetClass.getSimpleName(), condition.nameInDb, inserted_id));
-                cv.put(condition.nameInDb, inserted_id);
+                if (nextMap == null){
+                    nextMap = new HashMap<>();
+                }
+                nextMap.put(condition.nameInDb, inserted_id);
 
                 Set_FieldValue_Integer(target, condition.nameInDb, Integer.valueOf(Long.valueOf(inserted_id).intValue()));
             }
         }
 
-        long id = insertLocked(target, db, cv);
+        long id = insertLocked(target, db, nextMap);
         Set_FieldValue_Integer(target, "id", Integer.valueOf(Long.valueOf(id).intValue()));
 
         if (dependency.postConditions != null){
@@ -92,14 +89,28 @@ public class DefaultOperator extends Operator {
         return id;
     }
 
-    private <T> long insertLocked(T target, SQLiteDatabase db, ContentValues cv) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private <T> long insertLocked(T target, SQLiteDatabase db, Map<String, Long> nextMap) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        String sql = buildInsertSql(target, nextMap);
+        SQLiteStatement stms = db.compileStatement(sql);
+
+        return stms.executeInsert();
+    }
+
+    private <T> String buildInsertSql(T target, Map<String, Long> nextMap) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Class<?> targetClass = target.getClass();
+        StringBuilder columns = new StringBuilder();
+        StringBuilder values = new StringBuilder();
+        if (nextMap != null){
+            for (Map.Entry entry: nextMap.entrySet()){
+                columns.append((String)entry.getKey()).append(",");
+                values.append((Long)entry.getValue()).append(",");
+            }
+        }
         Dependency dependency = cache.getDependency(targetClass);
         for (Dependency.Column column: dependency.columns){
             Class<?> fieldType = column.fieldType;
             String nameInDb = column.nameInDb;
-            if (nameInDb.equals("id")
-                    || cv.keySet().contains(nameInDb)){
+            if (nameInDb.equals("id")){
                 continue;
             }
 
@@ -116,7 +127,8 @@ public class DefaultOperator extends Operator {
                 }
                 Logger.d(this, String.format("[%s] <insertLocked> typeInDb=%s, nameInDb=%s, Get_Value=%s",
                         targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                cv.put(nameInDb, value);
+                columns.append(nameInDb).append(",");
+                values.append(value).append(",");
             } else if (fieldType == Long.class){
                 Long value = 0L;
                 if (Get_Value != null){
@@ -126,7 +138,8 @@ public class DefaultOperator extends Operator {
                 }
                 Logger.d(this, String.format("[%s] <insertLocked> typeInDb=%s, nameInDb=%s, Get_Value=%s",
                         targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                cv.put(nameInDb, value);
+                columns.append(nameInDb).append(",");
+                values.append(value).append(",");
             } else if (fieldType == Float.class){
                 Float value = 0F;
                 if (Get_Value != null){
@@ -136,7 +149,8 @@ public class DefaultOperator extends Operator {
                 }
                 Logger.d(this, String.format("[%s] <insertLocked> typeInDb=%s, nameInDb=%s, Get_Value=%s",
                         targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                cv.put(nameInDb, value);
+                columns.append(nameInDb).append(",");
+                values.append(value).append(",");
             } else if (fieldType == String.class){
                 String value = "";
                 if (Get_Value != null){
@@ -146,183 +160,20 @@ public class DefaultOperator extends Operator {
                 }
                 Logger.d(this, String.format("[%s] <insertLocked> typeInDb=%s, nameInDb=%s, Get_Value=%s",
                         targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                cv.put(nameInDb, value);
+                columns.append(nameInDb).append(",");
+                values.append("\"").append(value).append("\"").append(",");
             }
         }
+        columns.deleteCharAt(columns.length()-1);
+        values.deleteCharAt(values.length()-1);
+
         String tableName = getTableName(targetClass);
-        Logger.d(this, String.format("<insertLocked> tableName=%s, cv=%s", tableName, cv.toString()));
+        StringBuilder insert = new StringBuilder("INSERT INTO "+tableName).append(" ")
+                .append("(").append(columns).append(")")
+                .append(" VALUES ")
+                .append("(").append(values).append(")").append(";");
 
-        return db.insert(tableName, null, cv);
-    }
-
-    public <T> List<T> onRetrieve(T target, SQLiteDatabase db) throws DatabaseOperationException{
-        try {
-            return retrieve(target, db, null);
-        } catch (NoSuchMethodException e) {
-            throw new DatabaseOperationException(e);
-        } catch (InstantiationException e){
-            throw new DatabaseOperationException(e);
-        } catch (IllegalAccessException e){
-            throw new DatabaseOperationException(e);
-        } catch (InvocationTargetException e){
-            throw new DatabaseOperationException(e);
-        }
-    }
-
-    private <T> List<T> retrieve(T target, SQLiteDatabase db, Map<String, Integer> nextCondition) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
-        List<T> retrievedTargets = retrieveLocked(target, db, nextCondition);
-        if (retrievedTargets == null){
-            return null;
-        }
-
-        Class<?> targetClass = target.getClass();
-        Dependency dependency = cache.getDependency(targetClass);
-        for (T retrievedTarget: retrievedTargets){
-            if (dependency.preConditions != null){
-                for (Dependency.Condition condition: dependency.preConditions){
-                    String fieldName = condition.fieldName;
-                    String nameInDb = condition.nameInDb;
-                    Class<?> nextClass = condition.genericType;
-                    Object nextInstance = nextClass.newInstance();
-
-                    Object Get_Value = Get_FieldValue(retrievedTarget, nameInDb);
-                    Logger.d(this, String.format("[%s] <retrieve> nextClass=%s, fieldName=%s, nameInDb=%s, Get_Value=%s",
-                            targetClass.getSimpleName(), nextClass.getSimpleName(), fieldName, nameInDb, Get_Value));
-
-                    Map<String, Integer> next = new HashMap<>();
-                    next.put("id", (int) Get_Value);
-                    List<?> retrievedNext = retrieve(nextInstance, db, next);
-                    Logger.d(this, String.format("[%s] <retrieve> type=%s", targetClass.getSimpleName(), nextClass.getSimpleName()));
-                    if (retrievedNext == null || retrievedNext.size() == 0){
-                        continue;
-                    }
-                    Set_FieldValue_Object(retrievedTarget, fieldName, retrievedNext.get(0), nextClass);
-                }
-            }
-            if (dependency.postConditions != null){
-                for (Dependency.Condition condition: dependency.postConditions){
-                    String fieldName = condition.fieldName;
-                    String nameInDb = condition.nameInDb;
-                    Class<?> nextClass = condition.genericType;
-                    Object nextInstance = nextClass.newInstance();
-
-                    Object Get_Value = Get_FieldValue(retrievedTarget, "id");
-                    Logger.d(this, String.format("[%s] <retrieve> nextClass=%s, fieldName=%s, nameInDb=%s, Get_Value=%s",
-                            targetClass.getSimpleName(), nextClass.getSimpleName(), fieldName, nameInDb, Get_Value));
-
-                    Map<String, Integer> next = new HashMap<>();
-                    next.put(nameInDb, (int) Get_Value);
-                    List<?> list = retrieve(nextInstance, db, next);
-                    if (list == null || list.size() == 0){
-                        continue;
-                    }
-                    Logger.d(this, String.format("[%s] <retrieve> type=%s, size=%d", targetClass.getSimpleName(), nextClass.getSimpleName(), list.size()));
-                    Set_FieldValue_Object(retrievedTarget, fieldName, list, List.class);
-                }
-            }
-        }
-
-        return retrievedTargets;
-    }
-
-    @TargetApi(Build.VERSION_CODES.N)
-    private <T> List<T> retrieveLocked(T target, SQLiteDatabase db, Map<String, Integer> nextCondition) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        String sql = buildRetrieveSql(target, nextCondition);
-        Logger.d(this, String.format("[%s]<retrieveLocked> sql=%s", target.getClass().getSimpleName(), sql));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-            db.validateSql(sql, null);
-        }
-        Cursor cursor = db.rawQuery(sql, null);
-        if (cursor != null && cursor.moveToFirst()){
-            List<T> ts = new ArrayList<>();
-            Class<T> targetClass = (Class<T>) target.getClass();
-            Dependency dependency = cache.getDependency(targetClass);
-            do {
-                T retrievedTarget = modelize(cursor, targetClass, dependency);
-                ts.add(retrievedTarget);
-            } while (cursor.moveToNext());
-
-            return ts;
-        }
-
-        return null;
-    }
-
-    private <T> T modelize(Cursor cursor, Class<T> targetClass, Dependency dependency) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        T targetInstance = targetClass.newInstance();
-        for (Dependency.Column column : dependency.columns) {
-            String nameInDb = column.nameInDb;
-            Class<?> fieldType = column.fieldType;
-            int index = cursor.getColumnIndex(nameInDb);
-            if (fieldType == Integer.class) {
-                Integer value = cursor.getInt(index);
-                Logger.d(this, String.format("[%s] <modelize> typeInDb=%s, nameInDb=%s, value=%s",
-                        targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                Set_FieldValue_Integer(targetInstance, nameInDb, value);
-            } else if (fieldType == Long.class) {
-                Long value = cursor.getLong(index);
-                Logger.d(this, String.format("[%s] <modelize> typeInDb=%s, nameInDb=%s, value=%s",
-                        targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                Set_FieldValue_Long(targetInstance, nameInDb, value);
-            } else if (fieldType == Float.class) {
-                Float value = cursor.getFloat(index);
-                Logger.d(this, String.format("[%s] <modelize> typeInDb=%s, nameInDb=%s, value=%s",
-                        targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                Set_FieldValue_Float(targetInstance, nameInDb, value);
-            } else if (fieldType == String.class) {
-                String value = cursor.getString(index);
-                Logger.d(this, String.format("[%s] <modelize> typeInDb=%s, nameInDb=%s, value=%s",
-                        targetClass.getSimpleName(), column.typeInDb, nameInDb, value));
-                Set_FieldValue_String(targetInstance, nameInDb, value);
-            }
-        }
-        return targetInstance;
-    }
-
-    private <T> String buildRetrieveSql(T target, Map<String, Integer> nextCondition) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Class<?> targetClass = target.getClass();
-        Dependency dependency = cache.getDependency(targetClass);
-        String tableName = getTableName(targetClass);
-        StringBuilder query = new StringBuilder("SELECT * FROM ").append(tableName);
-        StringBuilder where = new StringBuilder();
-        if (nextCondition == null){
-            for (Dependency.Column column: dependency.columns){
-                Class<?> fieldType = column.fieldType;
-                String nameInDb = column.nameInDb;
-                Object Get_Value = Get_FieldValue(target, nameInDb);
-                if (Get_Value == null){
-                    continue;
-                }
-                if (fieldType == Integer.class){
-                    Logger.d(this, String.format("[%s] <buildRetrieveSql> typeInDb=%s, nameInDb=%s, Get_value=%s",
-                            targetClass.getSimpleName(), column.typeInDb, nameInDb, Get_Value));
-                    where.append(nameInDb).append("=").append(Get_Value).append(" AND ");
-                } else if (fieldType == Long.class){
-                    Logger.d(this, String.format("[%s] <buildRetrieveSql> typeInDb=%s, nameInDb=%s, Get_value=%s",
-                            targetClass.getSimpleName(), column.typeInDb, nameInDb, Get_Value));
-                    where.append(nameInDb).append("=").append(Get_Value).append(" AND ");
-                } else if (fieldType == Float.class){
-                    Logger.d(this, String.format("[%s] <buildRetrieveSql> typeInDb=%s, nameInDb=%s, Get_value=%s",
-                            targetClass.getSimpleName(), column.typeInDb, nameInDb, Get_Value));
-                    where.append(nameInDb).append("=").append(Get_Value).append(" AND ");
-                } else if (fieldType == String.class){
-                    Logger.d(this, String.format("[%s] <buildRetrieveSql> typeInDb=%s, nameInDb=%s, Get_value=%s",
-                            targetClass.getSimpleName(), column.typeInDb, nameInDb, Get_Value));
-                    where.append(nameInDb).append("=").append("\"").append((String)Get_Value).append("\"").append(" AND ");
-                }
-            }
-        } else {
-            for (String key: nextCondition.keySet()){
-                where.append(key).append("=").append(nextCondition.get(key)).append(" AND ");
-            }
-        }
-        if (where.length() > 0){
-            query.append(" WHERE ").append(where.substring(0, where.lastIndexOf(" AND ")));
-        }
-        query.append(";");
-
-        return query.toString();
+        return insert.toString();
     }
 
     public <T> T onUpdate(T target, SQLiteDatabase db) throws DatabaseOperationException {
@@ -378,7 +229,9 @@ public class DefaultOperator extends Operator {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
             db.validateSql(sql, null);
         }
-        db.execSQL(sql);
+        SQLiteStatement stms = db.compileStatement(sql);
+        int nRow = stms.executeUpdateDelete();
+        Logger.d(this, String.format("<updateLocked> target=%s, affected row number=", target.getClass().getSimpleName(), nRow));
 
         return target;
     }
@@ -446,7 +299,7 @@ public class DefaultOperator extends Operator {
 
     public <T> List<T> onDelete(T target, SQLiteDatabase db) throws DatabaseOperationException {
         try {
-            List<T> deletedTargets = retrieve(target, db, null);
+            List<T> deletedTargets = onRetrieve(target, db);
             if (deletedTargets != null){
                 for (T deletedTarget: deletedTargets){
                     delete(deletedTarget, db);
@@ -458,8 +311,6 @@ public class DefaultOperator extends Operator {
         } catch (IllegalAccessException e){
             throw new DatabaseOperationException(e);
         } catch (InvocationTargetException e){
-            throw new DatabaseOperationException(e);
-        } catch (InstantiationException e){
             throw new DatabaseOperationException(e);
         }
     }
@@ -503,7 +354,10 @@ public class DefaultOperator extends Operator {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
             db.validateSql(sql, null);
         }
-        db.execSQL(sql);
+
+        SQLiteStatement stms = db.compileStatement(sql);
+        int nRow = stms.executeUpdateDelete();
+        Logger.d(this, String.format("<deleteLocked> target=%s, affected row number=", target.getClass().getSimpleName(), nRow));
 
         return target;
     }
