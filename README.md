@@ -1,4 +1,7 @@
 # ReadilyORM
+[ ![Download](https://api.bintray.com/packages/morening/maven/ReadilyORM/images/download.svg) ](https://bintray.com/morening/maven/ReadilyORM/_latestVersion)
+[![API](https://img.shields.io/badge/API-16%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=16)
+![](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
  * ReadilyORM is a easy, convenient, lightweight ORM.
  * All operations can rollback if failed when processing.
  * ReadilyORM could support from api 16(Android JellyBean) to api 28(Android Pie), it's that almost meet 99% device developing requirements.
