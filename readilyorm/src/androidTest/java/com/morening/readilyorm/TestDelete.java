@@ -17,11 +17,11 @@ import java.util.List;
  */
 
 @RunWith(AndroidJUnit4.class)
-public class TestDelete extends TestUpdateBase{
+public class TestDelete extends TestDeleteBase{
 
     @Before
     @Override
-    public void setup() throws DatabaseOperationException {
+    public void setUp() throws DatabaseOperationException {
         readilyORM = new ReadilyORM.Builder(InstrumentationRegistry.getTargetContext())
                 .name("test").version(1).type(CustomerBean.class).build();
         CustomerBean testingData = TestingData.getCustomerBean();

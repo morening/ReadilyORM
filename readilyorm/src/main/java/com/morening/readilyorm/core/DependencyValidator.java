@@ -1,6 +1,5 @@
 package com.morening.readilyorm.core;
 
-import com.morening.readilyorm.exception.DatabaseOperationException;
 import com.morening.readilyorm.exception.IllegalFieldException;
 
 /**

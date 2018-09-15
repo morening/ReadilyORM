@@ -12,17 +12,17 @@
  <dependency>
    <groupId>com.morening.readilyorm</groupId>
    <artifactId>readilyorm</artifactId>
-   <version>0.1.2</version>
+   <version>0.1.3</version>
    <type>pom</type>
  </dependency>
  ```
 * For Gradle, plz introduce like below
  ```groovy
- implement 'com.morening.readilyorm:readilyorm:0.1.2'
+ implement 'com.morening.readilyorm:readilyorm:0.1.3'
  ```
 * If using Ivy, have to add dependency like below
  ```xml
- <dependency org='com.morening.readilyorm' name='readilyorm' rev='0.1.2'>
+ <dependency org='com.morening.readilyorm' name='readilyorm' rev='0.1.3'>
    <artifact name='readilyorm' ext='pom' ></artifact>
  </dependency>
  ```

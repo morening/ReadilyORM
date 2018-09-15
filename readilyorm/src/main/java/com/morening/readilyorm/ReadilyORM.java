@@ -3,9 +3,12 @@ package com.morening.readilyorm;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.morening.readilyorm.core.ColumnVersionCache;
+import com.morening.readilyorm.core.ColumnVersionResolver;
 import com.morening.readilyorm.core.DatabaseGenerator;
 import com.morening.readilyorm.core.DatabaseOpenHelper;
 import com.morening.readilyorm.core.DatabaseOperationHelper;
+import com.morening.readilyorm.core.DefaultDatabaseVersionChangedListener;
 import com.morening.readilyorm.core.DefaultOperator;
 import com.morening.readilyorm.core.DependencyCache;
 import com.morening.readilyorm.core.DependencyResolver;
@@ -29,18 +32,26 @@ final public class ReadilyORM {
     private DatabaseOperationHelper operationHelper;
 
     private ReadilyORM(Context context, String name, int version, Class<?> type, Operator operator, DatabaseVersionChangedListener listener) {
-        DependencyCache cache = new DependencyCache();
-        DependencyResolver resolver = new DependencyResolver(cache);
-        resolver.resolve(type);
-        DependencyValidator.validate(cache);
-        DatabaseGenerator generator = new DatabaseGenerator(cache, listener);
+        DependencyCache dependencyCache = new DependencyCache();
+        DependencyResolver dependencyResolver = new DependencyResolver(dependencyCache);
+        dependencyResolver.resolve(type);
+        DependencyValidator.validate(dependencyCache);
+
+        ColumnVersionCache columnVersionCache = new ColumnVersionCache();
+        ColumnVersionResolver columnVersionResolver = new ColumnVersionResolver(columnVersionCache);
+        columnVersionResolver.resolve(type);
+
+        if (listener == null){
+            listener = new DefaultDatabaseVersionChangedListener(columnVersionCache);
+        }
+        DatabaseGenerator generator = new DatabaseGenerator(dependencyCache, listener);
         DatabaseOpenHelper openHelper = new DatabaseOpenHelper.Builder(context)
                 .name(name).version(version).generator(generator).build();
         Operator opt = operator;
         if (operator == null){
             opt = new DefaultOperator();
         }
-        opt.setDependencyCache(cache);
+        opt.setDependencyCache(dependencyCache);
         operationHelper = new DatabaseOperationHelper(openHelper, opt);
     }
 

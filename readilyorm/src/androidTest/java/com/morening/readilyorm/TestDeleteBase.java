@@ -91,7 +91,6 @@ abstract public class TestDeleteBase {
     public void delete_with_empty_locationbean() throws DatabaseOperationException {
         List<LocationBean> locationBeanList = readilyORM.delete(new LocationBean());
         Assert.assertNotNull(locationBeanList);
-        Assert.assertEquals(4, locationBeanList.size());
 
         List<LocationBean> locationBeans = readilyORM.retrieve(new LocationBean());
         Assert.assertNotNull(locationBeans);

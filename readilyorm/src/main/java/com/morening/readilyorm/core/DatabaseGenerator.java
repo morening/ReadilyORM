@@ -15,12 +15,12 @@ import java.util.Set;
  */
 final public class DatabaseGenerator {
 
-    private DependencyCache cache;
+    private DependencyCache dependencyCache;
 
     private DatabaseVersionChangedListener listener;
 
-    public DatabaseGenerator(DependencyCache cache, DatabaseVersionChangedListener listener){
-        this.cache = cache;
+    public DatabaseGenerator(DependencyCache dependencyCache, DatabaseVersionChangedListener listener){
+        this.dependencyCache = dependencyCache;
         this.listener = listener;
     }
 
@@ -29,7 +29,7 @@ final public class DatabaseGenerator {
     }
 
     private void generateTables(SQLiteDatabase db){
-        Set<Dependency> dependencySet = cache.getDependencySet();
+        Set<Dependency> dependencySet = dependencyCache.getDependencySet();
         for (Dependency dependency: dependencySet){
             generateTable(dependency, db);
         }
