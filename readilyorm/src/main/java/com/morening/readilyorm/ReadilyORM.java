@@ -35,7 +35,8 @@ final public class ReadilyORM {
         DependencyCache dependencyCache = new DependencyCache();
         DependencyResolver dependencyResolver = new DependencyResolver(dependencyCache);
         dependencyResolver.resolve(type);
-        DependencyValidator.validate(dependencyCache);
+        DependencyValidator validator = new DependencyValidator();
+        validator.validate(dependencyCache);
 
         ColumnVersionCache columnVersionCache = new ColumnVersionCache();
         ColumnVersionResolver columnVersionResolver = new ColumnVersionResolver(columnVersionCache);

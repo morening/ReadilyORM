@@ -2,18 +2,17 @@ package com.morening.readilyorm.core;
 
 import android.annotation.TargetApi;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.os.Build;
 
 import com.morening.readilyorm.DatabaseVersionChangedListener;
 import com.morening.readilyorm.util.Logger;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Created by morening on 2018/9/1.
  */
-final public class DatabaseGenerator {
+final public class DatabaseGenerator implements DependencyCache.Visitable {
 
     private DependencyCache dependencyCache;
 
@@ -29,10 +28,7 @@ final public class DatabaseGenerator {
     }
 
     private void generateTables(SQLiteDatabase db){
-        Set<Dependency> dependencySet = dependencyCache.getDependencySet();
-        for (Dependency dependency: dependencySet){
-            generateTable(dependency, db);
-        }
+        dependencyCache.accept(this, db);
     }
 
     @TargetApi(Build.VERSION_CODES.N)
@@ -76,5 +72,12 @@ final public class DatabaseGenerator {
 
     private String getTableName(Class<?> type){
         return type.getSimpleName().toLowerCase()+"_table";
+    }
+
+    @Override
+    public void visit(Map<Class<?>, Dependency> dependencies, SQLiteDatabase db) {
+        for (Dependency dependency: dependencies.values()){
+            generateTable(dependency, db);
+        }
     }
 }

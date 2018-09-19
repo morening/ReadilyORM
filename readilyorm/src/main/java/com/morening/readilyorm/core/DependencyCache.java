@@ -1,10 +1,10 @@
 package com.morening.readilyorm.core;
 
+import android.database.sqlite.SQLiteDatabase;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by morening on 2018/9/5.
@@ -12,7 +12,6 @@ import java.util.Set;
 public class DependencyCache {
 
     private final Map<Class<?>, Dependency> dependencyMap = new HashMap<>();
-    private Set<Dependency> dependencySet = null;
 
     public Dependency getDependency(Class<?> type){
         Dependency dependency = dependencyMap.get(type);
@@ -46,17 +45,12 @@ public class DependencyCache {
         dependency.postConditions.add(condition);
     }
 
-    public Set<Class<?>> getTypeSet(){
-        return dependencyMap.keySet();
+    public void accept(Visitable visitor, SQLiteDatabase db){
+        visitor.visit(dependencyMap, db);
     }
 
-    public Set<Dependency> getDependencySet(){
-        if (dependencySet == null){
-            dependencySet = new HashSet<>();
-            for (Class<?> type: dependencyMap.keySet()){
-                dependencySet.add(dependencyMap.get(type));
-            }
-        }
-        return dependencySet;
+    interface Visitable {
+
+        void visit(Map<Class<?>, Dependency> dependencies, SQLiteDatabase db);
     }
 }

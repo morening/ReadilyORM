@@ -193,7 +193,6 @@ public class TestRetrieve {
     public void retrieve_with_empty_locationbean() throws DatabaseOperationException {
         List<LocationBean> locationBeanList = readilyORM.retrieve(new LocationBean());
         Assert.assertNotNull(locationBeanList);
-        Assert.assertEquals(4, locationBeanList.size());
         for (int k=0; k<4; k++){
             Assert.assertNotNull(locationBeanList.get(k));
         }

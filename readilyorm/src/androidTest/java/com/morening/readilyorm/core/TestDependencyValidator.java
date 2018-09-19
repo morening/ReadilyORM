@@ -29,6 +29,6 @@ public class TestDependencyValidator {
 
     @Test(expected = IllegalFieldException.class)
     public void validate() {
-        DependencyValidator.validate(cache);
+        new DependencyValidator().validate(cache);
     }
 }

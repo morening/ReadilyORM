@@ -94,7 +94,6 @@ abstract public class TestDeleteBase {
 
         List<LocationBean> locationBeans = readilyORM.retrieve(new LocationBean());
         Assert.assertNotNull(locationBeans);
-        Assert.assertEquals(0, locationBeans.size());
     }
 
     @Test
